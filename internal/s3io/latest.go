@@ -20,7 +20,7 @@ func (cl *client) LatestMatching(prefix string) (string, int64, error) {
 		if err != nil {
 			return "", 0, err
 		}
-		if resp.IsTruncated == true {
+		if *resp.IsTruncated == true {
 			loi.ContinuationToken = resp.NextContinuationToken
 			continue
 		}
@@ -31,7 +31,7 @@ func (cl *client) LatestMatching(prefix string) (string, int64, error) {
 		}
 		object := resp.Contents[num-1]
 
-		return aws.ToString(object.Key), object.Size, nil
+		return aws.ToString(object.Key), *object.Size, nil
 	}
 
 	return "", 0, &ErrNoMatch{
