@@ -37,10 +37,7 @@ func compare_paths(path1, path2 string) int {
 	path1s := strings.Split(path1, string(os.PathSeparator))
 	path2s := strings.Split(path2, string(os.PathSeparator))
 
-	len1 := len(path1s)
-	len2 := len(path2s)
-
-	minlen := min(len1, len2)
+	minlen := min(len(path1s), len(path2s))
 
 	for i := 0; i < minlen; i++ {
 		if path1s[i] < path2s[i] {
