@@ -2,6 +2,8 @@ package ops
 
 import (
 	"context"
+	"os"
+	"strings"
 )
 
 // This operator is key to the system. It accepts two input streams of EntryInfo objects.
@@ -29,6 +31,34 @@ type streamComparer struct {
 	inFsys <-chan *EntryInfo
 	inMani <-chan *EntryInfo
 	out    chan<- *EntryInfo
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func compare_paths(path1, path2 string) int {
+	path1s := strings.Split(path1, string(os.PathSeparator))
+	path2s := strings.Split(path2, string(os.PathSeparator))
+
+	len1 := len(path1s)
+	len2 := len(path2s)
+
+	minlen := min(len1, len2)
+
+	for i := 0; i < minlen; i++ {
+		if path1s[i] < path2s[i] {
+			return -1
+		}
+		if path1s[i] > path2s[i] {
+			return 1
+		}
+	}
+
+	return 0
 }
 
 func (sc *streamComparer) run() {
@@ -87,8 +117,11 @@ func (sc *streamComparer) run() {
 			continue
 		}
 
+		// compare the paths by path segment, not as strings
+		val := compare_paths(hFsys.RelPath, hMani.RelPath)
+
 		// if hFsys is behind hMani: a new item
-		if hFsys.RelPath < hMani.RelPath {
+		if val < 0 {
 			hFsys.Status = StatusNew
 			sc.out <- hFsys
 			hFsys = nil
@@ -96,7 +129,7 @@ func (sc *streamComparer) run() {
 		}
 
 		// if hFsys is ahead of hMani: a removed item
-		if hFsys.RelPath > hMani.RelPath {
+		if val > 0 {
 			hMani.Status = StatusNotFound
 			sc.out <- hMani
 			hMani = nil
@@ -104,7 +137,7 @@ func (sc *streamComparer) run() {
 		}
 
 		// if the relpaths are the same, check the attributes
-		if hFsys.RelPath == hMani.RelPath {
+		if val == 0 {
 			// initialise the status and hash
 			hFsys.Status = StatusOk
 			hFsys.Hash = hMani.Hash
