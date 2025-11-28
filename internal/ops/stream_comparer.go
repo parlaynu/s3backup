@@ -33,13 +33,6 @@ type streamComparer struct {
 	out    chan<- *EntryInfo
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
 func compare_paths(path1, path2 string) int {
 	path1s := strings.Split(path1, string(os.PathSeparator))
 	path2s := strings.Split(path2, string(os.PathSeparator))
